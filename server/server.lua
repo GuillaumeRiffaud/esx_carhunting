@@ -1,7 +1,8 @@
 ESX = nil
 TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
 
-local playersCompleted = {}
+local playersCompleted = {};
+
 local todaysPrimeModel = nil
 local todaysPrimeColor = nil
 local todaysLocation = nil
@@ -37,8 +38,16 @@ ESX.RegisterServerCallback('carhunting:picktodaysvehicle', function(playerId, cb
     local xPlayer = ESX.GetPlayerFromId(playerId);
     local hasCompleted = getPlayerCleared(xPlayer.getIdentifier());
 
-    --give all that info to the client    
-    cb(todaysPrimeColor, todaysPrimeModel, todaysLocation, hasCompleted)
+    --give all that info to the client
+    
+    local Data = {
+        primeColor = todaysPrimeColor,
+        primeModel = todaysPrimeModel,
+        spawnNumber = todaysLocation,
+        hasCompleted = hasCompleted
+    }; 
+
+    cb(Data)
 end)
 
 function getPlayerCleared(Identifier)
