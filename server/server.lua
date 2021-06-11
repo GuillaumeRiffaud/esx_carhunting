@@ -1,12 +1,12 @@
 ESX = nil
+TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
+
 local playersCompleted = {}
 local todaysPrimeModel = nil
 local todaysPrimeColor = nil
 local todaysLocation = nil
 local firstPick = true
 local newPick = false
-
-TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
 
 ESX.RegisterServerCallback('carhunting:picktodaysvehicle', function(source, cb)
 
@@ -40,62 +40,69 @@ ESX.RegisterServerCallback('carhunting:picktodaysvehicle', function(source, cb)
 end)
 
 function getPlayerCleared(player)
-    for k,v in pairs (playersCompleted) do
-        if v == player then
-            return true
-        end
+    for _, v in pairs (playersCompleted) do
+        if v == player then return true end
     end
+
     return false
 end
 
 RegisterServerEvent('carhunting:submitvehicle')
-AddEventHandler('carhunting:submitvehicle', function(plate, modelName, vehicleColorGroup, health)
+AddEventHandler('carhunting:submitvehicle', function(vehicleData)
+    local playerId = source; local xPlayer = ESX.GetPlayerFromId(playerId);
 
-    local xPlayer = ESX.GetPlayerFromId(source) 
+    if (not xPlayer) then return end
 
     --check if the car belongs to a player, we don't want that
-    MySQL.Async.fetchAll('SELECT * FROM owned_vehicles WHERE @plate = plate', {
-        ['@plate'] = plate
+    MySQL.Async.fetchScalar('SELECT `owner` FROM owned_vehicles WHERE @plate = plate;', {
+        ['@plate'] = vehicleData.Plate
     }, function(result)
-        if result[1] then   --refuse any player's personal car
-            local reason = "belongs to a player"
-            TriggerClientEvent('carhunting:notaccepted', xPlayer.source, reason)
-        else
-            if modelName == todaysPrimeModel then
-                if (Config.CheckHealth and health >= Config.RequiredHealth) or not Config.CheckHealth then
-                    if vehicleColorGroup == todaysPrimeColor then -- Delivered the right car with the right color
-                        if Config.GiveBlackMoney then
-                            xPlayer.addAccountMoney('black_money', Config.FullReward)
-                        else
-                            xPlayer.addMoney(Config.FullReward)
-                        end
-                        if not Config.Repeatable then
-                            table.insert(playersCompleted, xPlayer.identifier)   --Make a list of players who have completed the quest so they don't see it anymore until reboot
-                        else
-                            newPick = true
-                        end
-                        TriggerClientEvent('carhunting:accepted', xPlayer.source, Config.FullReward)
-                    else    -- delivered the right car with the wrong color
-                        if Config.GiveBlackMoney then
-                            xPlayer.addAccountMoney('black_money', Config.PartialReward)
-                        else
-                            xPlayer.addMoney(Config.PartialReward)
-                        end
-                        if not Config.Repeatable then
-                            table.insert(playersCompleted, xPlayer.identifier)   --Make a list of players who have completed the quest so they don't see it anymore until reboot
-                        else
-                            newPick = true --if the quest is repeatable, we tell the server it's allowed to generate a new car and location
-                        end
-                        TriggerClientEvent('carhunting:accepted', xPlayer.source, Config.PartialReward)
+
+        if result then 
+            local reason = "belongs to a player";
+            xPlayer.triggerEvent('carhunting:notaccepted', reason)
+            return 
+        end
+
+        if vehicleData.modelName == todaysPrimeModel then
+            if (Config.CheckHealth and vehicleData.bodyHealth >= Config.RequiredHealth) or not Config.CheckHealth then
+                if vehicleData.colorName == todaysPrimeColor then -- Delivered the right car with the right color
+                    if Config.GiveBlackMoney then
+                        xPlayer.addAccountMoney('black_money', Config.FullReward)
+                    else
+                        xPlayer.addMoney(Config.FullReward)
                     end
-                else    -- car refused for bad driving reasons (can be turned off)
-                    local reason = "too low health"
-                    TriggerClientEvent('carhunting:notaccepted', xPlayer.source, reason)
+
+                    if not Config.Repeatable then
+                        table.insert(playersCompleted, xPlayer.identifier)   --Make a list of players who have completed the quest so they don't see it anymore until reboot
+                    else
+                        newPick = true
+                    end
+
+                    xPlayer.triggerEvent('carhunting:accepted', Config.FullReward)
+                else -- delivered the right car with the wrong color
+
+                    if Config.GiveBlackMoney then
+                        xPlayer.addAccountMoney('black_money', Config.PartialReward)
+                    else
+                        xPlayer.addMoney(Config.PartialReward)
+                    end
+
+                    if not Config.Repeatable then
+                        table.insert(playersCompleted, xPlayer.identifier)   --Make a list of players who have completed the quest so they don't see it anymore until reboot
+                    else
+                        newPick = true --if the quest is repeatable, we tell the server it's allowed to generate a new car and location
+                    end
+
+                    xPlayer.triggerEvent('carhunting:accepted', Config.PartialReward)
                 end
-            else    -- dude's drunk and got the wrong car model
-                local reason = "wrong model"
-                TriggerClientEvent('carhunting:notaccepted', xPlayer.source, reason)
+            else    -- car refused for bad driving reasons (can be turned off)
+                local reason = "too low health"
+                xPlayer.triggerEvent('carhunting:notaccepted', reason)
             end
+        else    -- dude's drunk and got the wrong car model
+            local reason = "wrong model"
+            xPlayer.triggerEvent('carhunting:notaccepted', reason)
         end
     end)
 end)
