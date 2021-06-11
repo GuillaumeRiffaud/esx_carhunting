@@ -20,7 +20,7 @@ end)
 
 
 Citizen.CreateThread(function() --calling server for today's vehicle prime and checking if we've already cleared the quest
-	Citizen.Wait(3000)
+	Citizen.Wait(3000) -- waiting for stuff to be correctly registered, I wish I knew a better way to do this
 	ESX.TriggerServerCallback('carhunting:picktodaysvehicle', function(primeColor, primeModel, spawnNumber, cleared)
 		todaysPrimeColor = primeColor
 		todaysPrimeModel = primeModel
@@ -149,7 +149,7 @@ Citizen.CreateThread(function()
 				local vehicle = GetVehiclePedIsIn(playerPed, false)
 				if GetPedInVehicleSeat(vehicle, -1) == playerPed then -- double or triple checking we're still driver in a vehicle
 
-					if IsControlJustReleased(0, 38) then
+					if IsControlJustReleased(0, 38) and not isDead then
 						local modelHash = GetEntityModel(vehicle)
 						local modelName = GetDisplayNameFromVehicleModel(modelHash)
 						local plate = ESX.Game.GetVehicleProperties(vehicle).plate
@@ -177,14 +177,6 @@ AddEventHandler('carhunting:accepted', function(reward)
 		ESX.ShowNotification(_U('sold_for', reward))
 		ESX.ShowHelpNotification(_U('job_done'))
 	end
-	ESX.TriggerServerCallback('carhunting:picktodaysvehicle', function(primeColor, primeModel, spawnNumber, cleared)
-		todaysPrimeColor = primeColor
-		todaysPrimeModel = primeModel
-		location = Config.Coords[spawnNumber]
-		alreadyDone = cleared
-	end)
-	Citizen.Wait(500)
-	TriggerEvent('carhunting:locationandblip')
 end)
 
 
@@ -198,3 +190,19 @@ AddEventHandler('carhunting:notaccepted', function(reason)
 		ESX.ShowHelpNotification(_U('wrong_car'))
 	end
 end)
+
+-- Should make every client refresh location and model when someone cleared the quest (repeatable mode)
+RegisterNetEvent('carhunting:someoneCleared')
+AddEventHandler('carhunting:someoneCleared', function()
+	ESX.TriggerServerCallback('carhunting:picktodaysvehicle', function(primeColor, primeModel, spawnNumber, cleared)
+		todaysPrimeColor = primeColor
+		todaysPrimeModel = primeModel
+		location = Config.Coords[spawnNumber]
+		alreadyDone = cleared
+	end)
+	Citizen.Wait(500)
+	TriggerEvent('carhunting:locationandblip')
+end)
+
+AddEventHandler('esx:onPlayerDeath', function(data) isDead = true end)
+AddEventHandler('esx:onPlayerSpawn', function(spawn) isDead = false end) 

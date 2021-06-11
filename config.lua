@@ -30,7 +30,7 @@ Config.Primes = {
 }
 
 --Whether it's a one-time only quest for each player (false), or a first-arrived first-served challenge that keeps generating new requests (true)
-Config.Repeatable = false
+Config.Repeatable = true
 --Do you want to check the car's body health before selling? If true, what's the minimum body health accepted?
 Config.CheckHealth = true
 Config.RequiredHealth = 950

@@ -1,12 +1,12 @@
 ESX = nil
+TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
+
 local playersCompleted = {}
 local todaysPrimeModel = nil
 local todaysPrimeColor = nil
 local todaysLocation = nil
 local firstPick = true
 local newPick = false
-
-TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
 
 ESX.RegisterServerCallback('carhunting:picktodaysvehicle', function(source, cb)
 
@@ -75,6 +75,7 @@ AddEventHandler('carhunting:submitvehicle', function(plate, modelName, vehicleCo
                             newPick = true
                         end
                         TriggerClientEvent('carhunting:accepted', xPlayer.source, Config.FullReward)
+                        TriggerClientEvent('carhunting:someoneCleared', -1)
                     else    -- delivered the right car with the wrong color
                         if Config.GiveBlackMoney then
                             xPlayer.addAccountMoney('black_money', Config.PartialReward)
@@ -87,6 +88,7 @@ AddEventHandler('carhunting:submitvehicle', function(plate, modelName, vehicleCo
                             newPick = true --if the quest is repeatable, we tell the server it's allowed to generate a new car and location
                         end
                         TriggerClientEvent('carhunting:accepted', xPlayer.source, Config.PartialReward)
+                        TriggerClientEvent('carhunting:someoneCleared', -1)
                     end
                 else    -- car refused for bad driving reasons (can be turned off)
                     local reason = "too low health"

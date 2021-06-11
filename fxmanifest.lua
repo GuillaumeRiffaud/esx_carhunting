@@ -1,4 +1,4 @@
-fx_version 'adamant'
+fx_version 'cerulean'
 game 'gta5'
 description 'Everyday find a target car to sell to an honest man'
 Author 'Heramy'
