@@ -8,40 +8,42 @@ local todaysLocation = nil
 local firstPick = true
 local newPick = false
 
-ESX.RegisterServerCallback('carhunting:picktodaysvehicle', function(source, cb)
+ESX.RegisterServerCallback('carhunting:picktodaysvehicle', function(playerId, cb)
 
-    if firstPick or newPick then    --We only want the location and requested vehicle to change the first time this is executed OR if someone has completed it and it's repeatable (in config)
-    -- pick a random spawn for the quest
+    if firstPick or newPick then    -- We only want the location and requested vehicle to change the first time this is executed OR if someone has completed it and it's repeatable (in config)
+        -- pick a random spawn for the quest
         print("Generating prime vehicle")
+
         local coordsCount = 0
         for index in pairs(Config.Coords) do
-            coordsCount = coordsCount + 1
+            coordsCount += 1;
         end
-        todaysLocation = math.random(1,coordsCount)
 
-    --pick a random car model and color for the quest
-        local nbOfPossibleModels = #(Config.Primes)
-        local randomModel = math.random(1,nbOfPossibleModels)
+        todaysLocation = math.random(1, coordsCount);
+
+        --pick a random car model and color for the quest
+
+        local nbOfPossibleModels = #Config.Primes
+        local randomModel = math.random(1, nbOfPossibleModels)
         todaysPrimeModel = Config.Primes[randomModel]
 
-        local randomColor = math.random(1,10) --We'll ignore pink, gold and chrome as they might be too rare
-        todaysPrimeColor = Config.Colors[randomColor].label
+        local randomColor = math.random(1, 10) -- We'll ignore pink, gold and chrome as they might be too rare
+        todaysPrimeColor = Config.Colors[tostring(randomColor)]
 
-        firstPick = false
-        newPick = false
+        firstPick = false; newPick = false
     end
 
     -- checking if player has already completed the quest
-    local xPlayer = ESX.GetPlayerFromId(source)
-    local cleared = getPlayerCleared(xPlayer.identifier)
+    local xPlayer = ESX.GetPlayerFromId(playerId);
+    local hasCompleted = getPlayerCleared(xPlayer.getIdentifier());
 
     --give all that info to the client    
-    cb(todaysPrimeColor, todaysPrimeModel, todaysLocation, cleared)
+    cb(todaysPrimeColor, todaysPrimeModel, todaysLocation, hasCompleted)
 end)
 
-function getPlayerCleared(player)
+function getPlayerCleared(Identifier)
     for _, v in pairs (playersCompleted) do
-        if v == player then return true end
+        if v == Identifier then return true end
     end
 
     return false
@@ -74,7 +76,7 @@ AddEventHandler('carhunting:submitvehicle', function(vehicleData)
                     end
 
                     if not Config.Repeatable then
-                        table.insert(playersCompleted, xPlayer.identifier)   --Make a list of players who have completed the quest so they don't see it anymore until reboot
+                        table.insert(playersCompleted, xPlayer.getIdentifier())   --Make a list of players who have completed the quest so they don't see it anymore until reboot
                     else
                         newPick = true
                     end
@@ -89,7 +91,7 @@ AddEventHandler('carhunting:submitvehicle', function(vehicleData)
                     end
 
                     if not Config.Repeatable then
-                        table.insert(playersCompleted, xPlayer.identifier)   --Make a list of players who have completed the quest so they don't see it anymore until reboot
+                        table.insert(playersCompleted, xPlayer.getIdentifier())   --Make a list of players who have completed the quest so they don't see it anymore until reboot
                     else
                         newPick = true --if the quest is repeatable, we tell the server it's allowed to generate a new car and location
                     end

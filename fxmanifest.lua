@@ -1,6 +1,8 @@
 fx_version 'cerulean'
 game 'gta5'
 
+lua54 'on'
+
 description 'Everyday find a target car to sell to an honest man'
 Author 'Heramy'
 version '0.9'
